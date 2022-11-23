@@ -1,0 +1,65 @@
+BL51 BANKED LINKER/LOCATER V6.00                                                        11/02/2020  21:06:03  PAGE 1
+
+
+BL51 BANKED LINKER/LOCATER V6.00, INVOKED BY:
+C:\KEIL\C51\BIN\BL51.EXE mmm.obj TO E_1
+
+
+MEMORY MODEL: SMALL
+
+
+INPUT MODULES INCLUDED:
+  mmm.obj (MMM)
+  C:\KEIL\C51\LIB\C51S.LIB (?C_STARTUP)
+
+
+LINK MAP OF MODULE:  E_1 (MMM)
+
+
+            TYPE    BASE      LENGTH    RELOCATION   SEGMENT NAME
+            -----------------------------------------------------
+
+            * * * * * * *   D A T A   M E M O R Y   * * * * * * *
+            REG     0000H     0008H     ABSOLUTE     "REG BANK 0"
+            IDATA   0008H     0001H     UNIT         ?STACK
+
+            * * * * * * *   C O D E   M E M O R Y   * * * * * * *
+            CODE    0000H     0003H     ABSOLUTE     
+            CODE    0003H     000CH     UNIT         ?C_C51STARTUP
+            CODE    000FH     0005H     INBLOCK      ?PR?MAIN?MMM
+
+
+
+OVERLAY MAP OF MODULE:   E_1 (MMM)
+
+
+SEGMENT
+  +--> CALLED SEGMENT
+---------------------
+?C_C51STARTUP
+  +--> ?PR?MAIN?MMM
+
+
+
+SYMBOL TABLE OF MODULE:  E_1 (MMM)
+
+  VALUE           TYPE          NAME
+  ----------------------------------
+
+  -------         MODULE        MMM
+  C:0000H         SYMBOL        _ICE_DUMMY_
+  D:0080H         PUBLIC        P0
+  D:00A0H         PUBLIC        P2
+  C:000FH         PUBLIC        main
+  -------         PROC          MAIN
+  C:000FH         LINE#         10
+  C:000FH         LINE#         11
+  C:0012H         LINE#         12
+  -------         ENDPROC       MAIN
+  -------         ENDMOD        MMM
+
+Program Size: data=9.0 xdata=0 code=20
+BL51 BANKED LINKER/LOCATER V6.00                                                      11/02/2020  21:06:03  PAGE 2
+
+
+LINK/LOCATE RUN COMPLETE.  0 WARNING(S),  0 ERROR(S)

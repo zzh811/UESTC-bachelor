@@ -1,0 +1,278 @@
+C51 COMPILER V8.02   MAIN                                                                  08/29/2014 17:21:48 PAGE 1   
+
+
+C51 COMPILER V8.02, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN main.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE main.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          /*
+   2                  main.c
+   3                  加减计数器
+   4          */
+   5          
+   6          
+   7          #include <reg51.h>
+   8          #include <absacc.h>
+   9          #include <ctype.h>
+  10          
+  11          
+  12          //定义按键
+  13          sbit KEY2 = P2^0;               //按键1
+  14          sbit KEY3 = P2^1;               //按键2
+  15          
+  16          
+  17          /*
+  18          函数：KeyScan()
+  19          功能：键盘扫描
+  20          返回：扫描到的键值
+  21          */
+  22          unsigned char KeyScan()
+  23          {
+  24   1              unsigned char k = '\0';
+  25   1              if ( KEY2 == 0 ) k = '+';
+  26   1              if ( KEY3== 0 ) k = '-';
+  27   1              return k;
+  28   1      }
+  29          
+  30          
+  31          //定义显示缓冲区（由定时中断程序自动扫描）
+  32          unsigned char DispBuf[8];
+  33          
+  34          
+  35          /*
+  36          函数：T1INTSVC()
+  37          功能：定时器T1的中断服务函数
+  38          */
+  39          void T1INTSVC() interrupt 3
+  40          {
+  41   1              code unsigned char com[] = {0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80};
+  42   1              static unsigned char n = 0;
+  43   1              TR1 = 0;
+  44   1              TH1 = 0xFC;
+  45   1              TL1 = 0x66;
+  46   1              TR1 = 1;
+  47   1              XBYTE[0x7800] = 0xFF;           //暂停显示
+  48   1              XBYTE[0x7801] = ~DispBuf[n];    //更新扫描数据
+  49   1              XBYTE[0x7800] = ~com[n];        //重新显示
+  50   1              n++;
+  51   1              n &= 0x07;
+  52   1      }
+  53          
+  54          
+  55          /*
+C51 COMPILER V8.02   MAIN                                                                  08/29/2014 17:21:48 PAGE 2   
+
+  56          函数：DispClear()
+  57          功能：清除数码管的所有显示
+  58          */
+  59          void DispClear()
+  60          {
+  61   1              unsigned char i;
+  62   1              for ( i=0; i<8; i++ )
+  63   1              {
+  64   2                      DispBuf[i] = 0x00;
+  65   2              }
+  66   1      }
+  67          
+  68          
+  69          /*
+  70          函数：DispChar()
+  71          功能：在数码管上显示字符
+  72          参数：
+  73                  x：数码管的坐标位置（0～7）
+  74                  c：要显示的字符（仅限16进制数字和减号）
+  75                  dp：是否显示小数点，0－不显示，1－显示
+  76          */
+  77          void DispChar(unsigned char x, unsigned char c, bit dp)
+  78          {
+  79   1              code unsigned char Tab[] =
+  80   1              {//定义0123456789AbCdEF的数码管字型数据
+  81   1                      0x3F,0x06,0x5B,0x4F,0x66,0x6D,0x7D,0x07,
+  82   1                      0x7F,0x6F,0x77,0x7C,0x39,0x5E,0x79,0x71
+  83   1              };
+  84   1              unsigned char t;        //临时变量
+  85   1      //防止显示位置超出范围
+  86   1              x &= 0x07;
+  87   1              x = 7 - x;
+  88   1      //分析字符c，取得对应的数码管字型数据
+  89   1              if ( c == '-' )
+  90   1              {
+  91   2                      t = 0x40;
+  92   2              }
+  93   1              else
+  94   1              {
+  95   2                      t = toint(c);   //toint()为库函数，详见C:\Keil\C51\HLP\C51.pdf
+  96   2                      if ( t < 16 )   //如果是16进制字符
+  97   2                      {
+  98   3                              t = Tab[t];     //查表，取得数码管字型数据
+  99   3                      }
+ 100   2                      else
+ 101   2                      {
+ 102   3                              t = 0x00;       //如果是其它字符则显示为空白
+ 103   3                      }
+ 104   2              }
+ 105   1      //检查是否显示小数点
+ 106   1              if ( dp )
+ 107   1              {
+ 108   2                      t |= 0x80;
+ 109   2              }
+ 110   1              else
+ 111   1              {
+ 112   2                      t &= 0x7F;
+ 113   2              }
+ 114   1      //送到显示缓冲区显示
+ 115   1              DispBuf[x] = t;
+ 116   1      }
+ 117          
+C51 COMPILER V8.02   MAIN                                                                  08/29/2014 17:21:48 PAGE 3   
+
+ 118          
+ 119          /*
+ 120          函数：DispStr()
+ 121          功能：在数码管上显示字符串
+ 122          参数：
+ 123                  x：显示的起始位置（0～7）
+ 124                  *s：要显示的字符串（内容仅限16进制数字和减号）
+ 125          */
+ 126          void DispStr(unsigned char x, unsigned char idata *s)
+ 127          {
+ 128   1              unsigned char c;
+ 129   1              for (;;)
+ 130   1              {
+ 131   2                      c = *s++;
+ 132   2                      if ( c == '\0' ) break;
+ 133   2                      DispChar(x++,c,0);
+ 134   2              }
+ 135   1      }
+ 136          
+ 137          
+ 138          /*
+ 139          函数：ByteToStr()
+ 140          功能：字节型变量c转换为十进制字符串
+ 141          */
+ 142          void ByteToStr(unsigned char idata *s, unsigned char c)
+ 143          {
+ 144   1              code unsigned char Tab[] = {100,10};
+ 145   1              unsigned char i;
+ 146   1              unsigned char t;
+ 147   1              for ( i=0; i<2; i++ )
+ 148   1              {
+ 149   2                      t = c / Tab[i];
+ 150   2                      *s++ = '0' + t;
+ 151   2                      c -= t * Tab[i];
+ 152   2              }
+ 153   1              *s++ = '0' + c;
+ 154   1              *s = '\0';
+ 155   1      }
+ 156          
+ 157          
+ 158          /*
+ 159          函数：DispInit()
+ 160          功能：数码管扫描显示初始化
+ 161          */
+ 162          void DispInit()
+ 163          {
+ 164   1              DispClear();    //初始为全灭
+ 165   1              EA = 0;
+ 166   1              TMOD &= 0x0F;
+ 167   1              TMOD |= 0x10;
+ 168   1              TH1 = 0xFC;
+ 169   1              TL1 = 0x66;
+ 170   1              TR1 = 1;
+ 171   1              ET1 = 1;
+ 172   1              EA = 1;
+ 173   1      }
+ 174          
+ 175          
+ 176          /*
+ 177          函数：Delay()
+ 178          功能：延时0.001～65.536s
+ 179          参数：
+C51 COMPILER V8.02   MAIN                                                                  08/29/2014 17:21:48 PAGE 4   
+
+ 180                  t>0时，延时(t*0.001)s
+ 181                  t=0时，延时65.536s
+ 182          说明：
+ 183                  晶振用18MHz
+ 184          */
+ 185          void Delay(unsigned int t)
+ 186          {
+ 187   1              do
+ 188   1              {
+ 189   2                      TH0 = 0xFA;
+ 190   2                      TL0 = 0x24;
+ 191   2                      TR0 = 1;
+ 192   2                      while ( !TF0 );
+ 193   2                      TR0 = 0;
+ 194   2                      TF0 = 0;
+ 195   2              } while ( --t != 0 );
+ 196   1      }
+ 197          
+ 198          
+ 199          /*
+ 200          函数：SysInit()
+ 201          功能：系统初始化
+ 202          */
+ 203          void SysInit()
+ 204          {
+ 205   1              TMOD &= 0xF0;
+ 206   1              TMOD |= 0x01;   //设置定时器T0为16位定时器
+ 207   1              DispInit();             //数码管扫描显示初始化
+ 208   1      }
+ 209          
+ 210          
+ 211          void main()
+ 212          {
+ 213   1              unsigned char idata s[4];
+ 214   1              unsigned char k;                //定义键值变量
+ 215   1              unsigned char cnt = 18; //定义计数器变量
+ 216   1              SysInit();                              //系统初始化
+ 217   1              ByteToStr(s,cnt);
+ 218   1              DispStr(5,s);           //先显示数值n
+ 219   1              for (;;)
+ 220   1              {
+ 221   2                      for (;;)
+ 222   2                      {
+ 223   3                              Delay(50);              //延时50ms
+ 224   3                              k = KeyScan();  //键盘扫描
+ 225   3                              if ( k != '\0' ) break;         //如果有键按下，退出循环
+ 226   3                      }
+ 227   2                      switch ( k )            //判断键值，执行具体功能
+ 228   2                      {
+ 229   3                      case '+':
+ 230   3                              if ( cnt < 31 ) cnt++;
+ 231   3                              break;
+ 232   3                      case '-':
+ 233   3                              if ( cnt > 0 ) cnt--;
+ 234   3                              break;
+ 235   3                      default:
+ 236   3                              break;
+ 237   3                      }
+ 238   2                      ByteToStr(s,cnt);
+ 239   2                      DispStr(5,s);   //显示计数器值
+ 240   2                      for (;;)
+ 241   2                      {
+C51 COMPILER V8.02   MAIN                                                                  08/29/2014 17:21:48 PAGE 5   
+
+ 242   3                              Delay(50);              //延时50ms
+ 243   3                              if ( KeyScan() == '\0' ) break; //如果按键抬起，退出循环
+ 244   3                      }
+ 245   2              }
+ 246   1      }
+ 247          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    357    ----
+   CONSTANT SIZE    =     26    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      9       5
+   IDATA SIZE       =   ----       4
+   BIT SIZE         =   ----       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

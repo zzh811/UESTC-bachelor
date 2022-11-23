@@ -1,0 +1,36 @@
+C51 COMPILER V8.02   MMM                                                                   11/02/2020 21:06:03 PAGE 1   
+
+
+C51 COMPILER V8.02, COMPILATION OF MODULE MMM
+OBJECT MODULE PLACED IN mmm.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE mmm.c ROM(SMALL) BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          /*
+   2                  main.c
+   3                  点亮LED
+   4          */
+   5          
+   6          
+   7          #include <reg51.h>                //包含8051的SFR寄存器定义头文件
+   8          #include <ABSACC.H>
+   9          sbit LED = P2^4;
+  10          void main()
+  11          {       P0=0x77;               //点亮LED（规定LED是低电平点亮的）
+  12   1      for (;;);                     //停机（在C51的main函数里，一般不允许执行返回操作）
+  13   1      }                                
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =      5    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

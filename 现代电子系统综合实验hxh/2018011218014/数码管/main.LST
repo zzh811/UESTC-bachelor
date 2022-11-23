@@ -1,0 +1,203 @@
+C51 COMPILER V8.02   MAIN                                                                  08/29/2014 17:20:44 PAGE 1   
+
+
+C51 COMPILER V8.02, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN main.OBJ
+COMPILER INVOKED BY: C:\Keil\C51\BIN\C51.EXE main.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          /*
+   2                  main.c
+   3                  数码管的动态扫描显示
+   4          */
+   5          
+   6          
+   7          #include <reg51.h>
+   8          #include <absacc.h>
+   9          #include <ctype.h>
+  10          
+  11          
+  12          //定义显示缓冲区（由定时中断程序自动扫描）
+  13          unsigned char DispBuf[8];
+  14          
+  15          
+  16          /*
+  17          函数：T1INTSVC()
+  18          功能：定时器T1的中断服务函数
+  19          */
+  20          void T1INTSVC() interrupt 3
+  21          {
+  22   1              code unsigned char com[] = {0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80};
+  23   1              static unsigned char n = 0;
+  24   1              TR1 = 0;
+  25   1              TH1 = 0xFC;
+  26   1              TL1 = 0x66;
+  27   1              TR1 = 1;
+  28   1              XBYTE[0x7800] = 0xFF;           //暂停显示
+  29   1              XBYTE[0x7801] = ~DispBuf[n];    //更新扫描数据
+  30   1              XBYTE[0x7800] = ~com[n];        //重新显示
+  31   1              n++;
+  32   1              n &= 0x07;
+  33   1      }
+  34          
+  35          
+  36          /*
+  37          函数：DispClear()
+  38          功能：清除数码管的所有显示
+  39          */
+  40          void DispClear()
+  41          {
+  42   1              unsigned char i;
+  43   1              for ( i=0; i<8; i++ )
+  44   1              {
+  45   2                      DispBuf[i] = 0x00;
+  46   2              }
+  47   1      }
+  48          
+  49          
+  50          /*
+  51          函数：DispChar()
+  52          功能：在数码管上显示字符
+  53          参数：
+  54                  x：数码管的坐标位置（0～7）
+  55                  c：要显示的字符（仅限16进制数字和减号）
+C51 COMPILER V8.02   MAIN                                                                  08/29/2014 17:20:44 PAGE 2   
+
+  56                  dp：是否显示小数点，0－不显示，1－显示
+  57          */
+  58          void DispChar(unsigned char x, unsigned char c, bit dp)
+  59          {
+  60   1              code unsigned char Tab[] =
+  61   1              {//定义0123456789AbCdEF的数码管字型数据
+  62   1                      0x3F,0x06,0x5B,0x4F,0x66,0x6D,0x7D,0x07,
+  63   1                      0x7F,0x6F,0x77,0x7C,0x39,0x5E,0x79,0x71
+  64   1              };
+  65   1              unsigned char t;        //临时变量
+  66   1      //防止显示位置超出范围
+  67   1              x &= 0x07;
+  68   1              x = 7 - x;
+  69   1      //分析字符c，取得对应的数码管字型数据
+  70   1              if ( c == '-' )
+  71   1              {
+  72   2                      t = 0x40;
+  73   2              }
+  74   1              else
+  75   1              {
+  76   2                      t = toint(c);   //toint()为库函数，详见C:\Keil\C51\HLP\C51.pdf
+  77   2                      if ( t < 16 )   //如果是16进制字符
+  78   2                      {
+  79   3                              t = Tab[t];     //查表，取得数码管字型数据
+  80   3                      }
+  81   2                      else
+  82   2                      {
+  83   3                              t = 0x00;       //如果是其它字符则显示为空白
+  84   3                      }
+  85   2              }
+  86   1      //检查是否显示小数点
+  87   1              if ( dp )
+  88   1              {
+  89   2                      t |= 0x80;
+  90   2              }
+  91   1              else
+  92   1              {
+  93   2                      t &= 0x7F;
+  94   2              }
+  95   1      //送到显示缓冲区显示
+  96   1              DispBuf[x] = t;
+  97   1      }
+  98          
+  99          
+ 100          /*
+ 101          函数：DispInit()
+ 102          功能：数码管扫描显示初始化
+ 103          */
+ 104          void DispInit()
+ 105          {
+ 106   1              DispClear();    //初始为全灭
+ 107   1              EA = 0;
+ 108   1              TMOD &= 0x0F;
+ 109   1              TMOD |= 0x10;
+ 110   1              TH1 = 0xFC;
+ 111   1              TL1 = 0x66;
+ 112   1              TR1 = 1;
+ 113   1              ET1 = 1;
+ 114   1              EA = 1;
+ 115   1      }
+ 116          
+ 117          
+C51 COMPILER V8.02   MAIN                                                                  08/29/2014 17:20:44 PAGE 3   
+
+ 118          /*
+ 119          函数：Delay()
+ 120          功能：延时0.001～65.536s
+ 121          参数：
+ 122                  t>0时，延时(t*0.001)s
+ 123                  t=0时，延时65.536s
+ 124          */
+ 125          void Delay(unsigned int t)
+ 126          {
+ 127   1              do
+ 128   1              {
+ 129   2                      TH0 = 0xFA;
+ 130   2                      TL0 = 0x24;
+ 131   2                      TR0 = 1;
+ 132   2                      while ( !TF0 );
+ 133   2                      TR0 = 0;
+ 134   2                      TF0 = 0;
+ 135   2              } while ( --t != 0 );
+ 136   1      }
+ 137          
+ 138          
+ 139          /*
+ 140          函数：SysInit()
+ 141          功能：系统初始化
+ 142          */
+ 143          void SysInit()
+ 144          {
+ 145   1              TMOD &= 0xF0;
+ 146   1              TMOD |= 0x01;   //设置定时器T0为16位定时器
+ 147   1              DispInit();             //数码管扫描显示初始化
+ 148   1      }
+ 149          
+ 150          
+ 151          void main()
+ 152          {
+ 153   1              code unsigned char s[] = "0123456789abcdef";
+ 154   1              unsigned char i;
+ 155   1              unsigned char x;
+ 156   1              bit dp;
+ 157   1              SysInit();
+ 158   1              dp = 0;
+ 159   1              for (;;)
+ 160   1              {
+ 161   2      
+ 162   2                       
+ 163   2              for ( i=0; i<16; i++ )
+ 164   2                      {
+ 165   3                              for ( x=0; x<8; x++ )
+ 166   3                              {
+ 167   4                              DispChar(x,s[i],dp);
+ 168   4                              }
+ 169   3                              Delay(1000);
+ 170   3                      }  
+ 171   2                      dp = !dp; 
+ 172   2              }
+ 173   1      }
+ 174          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    250    ----
+   CONSTANT SIZE    =     41    ----
+C51 COMPILER V8.02   MAIN                                                                  08/29/2014 17:20:44 PAGE 4   
+
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      9       3
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       2
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
