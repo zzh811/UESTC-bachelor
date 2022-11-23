@@ -1,0 +1,151 @@
+//----------------------------------------------------------------------
+//--SAYEH (Simple Architecture Yet Enough Hardware) CPU
+//----------------------------------------------------------------------
+// Data Path 
+
+`timescale 1 ns /1 ns
+
+module DataPath (
+	 clk, Databus, Addressbus, 
+    ResetPC, PCplusI, PCplus1, RplusI, Rplus0,
+    Rs_on_AddressUnitRSide, Rd_on_AddressUnitRSide, EnablePC,
+    B15to0, AandB, AorB, notB, shlB, shrB, AaddB, AsubB, AmulB, AcmpB,aluout,sel_aluout_rfin,sel_rfin,
+    RFLwrite, RFHwrite,
+    IRload, SRload, 
+    Address_on_Databus, ALU_on_Databus, IR_on_LOpndBus, IR_on_HOpndBus, RFright_on_OpndBus,
+    Cset, Creset, 
+    Instruction, Cout,Zout,IO_datain
+);
+input clk;
+input  [15:0] Databus;
+input  [15:0] IO_datain;
+output [15:0] Addressbus;
+output [15:0] aluout;
+input 
+	ResetPC, PCplusI, PCplus1, RplusI, Rplus0,
+	Rs_on_AddressUnitRSide, Rd_on_AddressUnitRSide, EnablePC,
+	B15to0, AandB, AorB, notB, shlB, shrB, AaddB, AsubB, AmulB, AcmpB,sel_aluout_rfin,sel_rfin,
+	RFLwrite, RFHwrite,
+	IRload, SRload, 
+	Address_on_Databus, ALU_on_Databus, IR_on_LOpndBus, IR_on_HOpndBus, RFright_on_OpndBus,
+	Cset, Creset;
+output [15:0] Instruction;
+output Cout,Zout;
+
+wire [15:0] Address, AddressUnitRSideBus;
+wire [15:0] Right, Left, OpndBus, ALUout, IRout;
+wire SRCin, SRCout,SRZin,SRZout;  
+wire 
+	ResetPC, PCplusI, PCplus1, RplusI, Rplus0,
+	Rs_on_AddressUnitRSide, Rd_on_AddressUnitRSide, EnablePC,
+	B15to0, AandB, AorB, notB, shlB, shrB, AaddB, AsubB, AmulB, AcmpB,
+	RFLwrite, RFHwrite,
+	IRload, SRload, 
+	Address_on_Databus, ALU_on_Databus, IR_on_LOpndBus, IR_on_HOpndBus, RFright_on_OpndBus,
+	Cset, Creset;
+wire [1:0] Laddr, Raddr;
+wire [15:0] RFin,rfin;
+
+assign aluout=ALUout;
+
+
+AddressingUnit AU
+(
+//code
+.Rside  (AddressUnitRSideBus),
+.Iside  (IRout[7:0]),
+.Address  (Adress),
+.clk     (clk),
+.ResetPC  (ResetPC), 
+.PCplusI  (PCplusI), 
+.PCplus1  (PCplus1), 
+.RplusI   (RplusI), 
+.Rplus0   (Rplus0), 
+.PCenable  (EnablePC)
+);
+
+
+	
+ArithmeticUnit AL
+(
+//code
+.A        (Left),
+.B        (OpndBus),
+.B15to0  (B15to0), 
+.AandB  (AandB), 
+.AorB   (AorB), 
+.notB   (notB), 
+.shlB   (shlB), 
+.shrB   (shrB), 
+.AaddB  (AaddB), 
+.AsubB (AsubB), 
+.AmulB  (AmulB), 
+.AcmpB  (AcmpB),  
+.aluout (Aluout), 
+.cin    (SRCout),  
+.cout   (SRCin), 
+.zout   (SRZin),
+);
+
+
+RegisterFile RF(
+//code
+.in        (RFin),
+.clk       (clk),
+.RFLwrite  (RFLwrite), 
+.RFHwrite  (RFHwrite),
+.Laddr (Laddr), 
+.Raddr (Raddr),
+.Lout   (Left), 
+.Rout (Right),
+);
+
+
+InstrunctionRegister IR
+(
+.in      (Databus),
+.IRload  (IRload),
+.clk     (clk),
+.out     (IRout)
+);
+
+	
+StatusRegister SR
+(
+.Cin      (SRCin),
+.Zin      (SRZin),
+.SRload   (SRload),
+.clk      (clk),
+.Cset     (Cset),
+.Creset   (Creset),
+.Zout     (SRZout),
+.Cout     (SRCout)
+);
+
+
+	assign AddressUnitRSideBus = 
+		(Rs_on_AddressUnitRSide) ? Right : (Rd_on_AddressUnitRSide) ? Left : 16'bZZZZZZZZZZZZZZZZ;
+
+	assign Addressbus = Address;	
+	
+	assign OpndBus[07:0] = IR_on_LOpndBus == 1 ? IRout[7:0] : 8'bZZZZZZZZ;
+
+	assign OpndBus[15:8] = IR_on_HOpndBus == 1 ? IRout[7:0] : 8'bZZZZZZZZ;
+
+	assign OpndBus = RFright_on_OpndBus == 1 ? Right : 16'bZZZZZZZZZZZZZZZZ;
+
+	assign Zout = SRZout;
+
+	assign Cout = SRCout;
+
+	assign Instruction = IRout[15:0];
+
+	assign Laddr =  IRout[11:10];
+
+	assign Raddr =  IRout[09:08];
+	
+	assign RFin = sel_aluout_rfin ? ALUout : rfin;
+	
+	assign rfin = sel_rfin ? IO_datain : Databus;
+
+endmodule

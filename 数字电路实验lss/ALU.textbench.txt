@@ -1,0 +1,109 @@
+// Copyright (C) 1991-2013 Altera Corporation
+// Your use of Altera Corporation's design tools, logic functions 
+// and other software and tools, and its AMPP partner logic 
+// functions, and any output files from any of the foregoing 
+// (including device programming or simulation files), and any 
+// associated documentation or information are expressly subject 
+// to the terms and conditions of the Altera Program License 
+// Subscription Agreement, Altera MegaCore Function License 
+// Agreement, or other applicable license agreement, including, 
+// without limitation, that your use is for the sole purpose of 
+// programming logic devices manufactured by Altera and sold by 
+// Altera or its authorized distributors.  Please refer to the 
+// applicable agreement for further details.
+
+// *****************************************************************************
+// This file contains a Verilog test bench template that is freely editable to  
+// suit user's needs .Comments are provided in each section to help the user    
+// fill out necessary details.                                                  
+// *****************************************************************************
+// Generated on "09/09/2016 16:28:39"
+                                                                                
+// Verilog Test Bench template for design : ArithmeticUnit
+// 
+// Simulation tool : ModelSim-Altera (Verilog)
+// 
+
+`timescale 1 ps/ 1 ps
+`define B15to0H 10'b1000000000
+`define AandBH  10'b0100000000
+`define AorBH   10'b0010000000
+`define notBH   10'b0001000000
+`define shlBH   10'b0000100000
+`define shrBH   10'b0000010000
+`define AaddBH  10'b0000001000
+`define AsubBH  10'b0000000100
+`define AmulBH  10'b0000000010
+`define AcmpBH  10'b0000000001
+module ArithmeticUnit_vlg_tst();
+// constants                                           
+// general purpose registers
+reg eachvec;
+// test vector input registers
+reg [15:0] A;
+reg AaddB;
+reg AandB;
+reg AcmpB;
+reg AmulB;
+reg AorB;
+reg AsubB;
+reg [15:0] B;
+reg B15to0;
+reg cin;
+reg notB;
+reg shlB;
+reg shrB;
+// wires                                               
+wire [15:0]  aluout;
+wire cout;
+wire zout;
+
+// assign statements (if any)                          
+ArithmeticUnit i1 (
+// port map - connection between master ports and signals/registers   
+	.A(A),
+	.AaddB(AaddB),
+	.AandB(AandB),
+	.AcmpB(AcmpB),
+	.AmulB(AmulB),
+	.AorB(AorB),
+	.AsubB(AsubB),
+	.B(B),
+	.B15to0(B15to0),
+	.aluout(aluout),
+	.cin(cin),
+	.cout(cout),
+	.notB(notB),
+	.shlB(shlB),
+	.shrB(shrB),
+	.zout(zout)
+);
+initial                                                
+begin                                                  
+A=16'b0000000011111111;
+B=16'b1111111100000000;
+cin=0;
+	begin
+	#20
+	{B15to0, AandB, AorB, notB, shlB, shrB, AaddB, AsubB, AmulB, AcmpB}=`B15to0H;
+	#20
+	{B15to0, AandB, AorB, notB, shlB, shrB, AaddB, AsubB, AmulB, AcmpB}=`AandBH;
+	#20
+	{B15to0, AandB, AorB, notB, shlB, shrB, AaddB, AsubB, AmulB, AcmpB}=`AorBH;
+	#20
+	{B15to0, AandB, AorB, notB, shlB, shrB, AaddB, AsubB, AmulB, AcmpB}=`notBH;
+	#20
+	{B15to0, AandB, AorB, notB, shlB, shrB, AaddB, AsubB, AmulB, AcmpB}=`shlBH;
+	#20
+	{B15to0, AandB, AorB, notB, shlB, shrB, AaddB, AsubB, AmulB, AcmpB}=`shrBH;
+	#20
+	{B15to0, AandB, AorB, notB, shlB, shrB, AaddB, AsubB, AmulB, AcmpB}=`AaddBH;
+	#20
+	{B15to0, AandB, AorB, notB, shlB, shrB, AaddB, AsubB, AmulB, AcmpB}=`AsubBH;
+	#20
+	{B15to0, AandB, AorB, notB, shlB, shrB, AaddB, AsubB, AmulB, AcmpB}=`AmulBH;
+	#20
+	{B15to0, AandB, AorB, notB, shlB, shrB, AaddB, AsubB, AmulB, AcmpB}=`AcmpBH;
+	end
+end                                                    
+endmodule

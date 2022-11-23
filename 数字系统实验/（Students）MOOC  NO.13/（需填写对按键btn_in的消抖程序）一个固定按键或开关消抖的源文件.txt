@@ -1,0 +1,17 @@
+//一个固定按键或开关的消抖程序
+module ajxd(
+    input btn_in,
+    input btn_clk,
+    output btn_out
+    );  
+    reg  btn0=0;//定义了btn0寄存器
+    reg  btn1=0;//定义了btn1寄存器
+    reg  btn2=0;//定义了btn2寄存器
+  //在下面参考课件程序，自己填写对按键btn_in的消抖程序
+ 
+ 
+ 
+ 
+ 
+ //上面须填写对按键btn_in的消抖程序
+endmodule

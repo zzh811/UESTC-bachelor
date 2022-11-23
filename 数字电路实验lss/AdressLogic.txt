@@ -1,0 +1,34 @@
+//----------------------------------------------------------------------
+//--SAYEH (Simple Architecture Yet Enough Hardware) CPU
+//----------------------------------------------------------------------
+// Address Logic
+
+`timescale 1 ns /1 ns
+`define ResetPCH 5'b10000//进行宏定义
+`define PCplusIH 5'b01000
+`define PCplus1H 5'b00100
+`define RplusIH 5'b00010
+`define Rplus0H 5'b00001
+module AddressLogic (
+	PCside, Rside, Iside, ALout, ResetPC, PCplusI, PCplus1, RplusI, Rplus0
+);
+input [15:0] PCside, Rside;
+input [7:0] Iside;
+input ResetPC, PCplusI, PCplus1, RplusI, Rplus0;
+output [15:0] ALout;
+reg [15:0] ALout;
+
+	always @(PCside or Rside or Iside or ResetPC or PCplusI or PCplus1 or RplusI or Rplus0)
+	begin
+		case ({ResetPC, PCplusI, PCplus1, RplusI, Rplus0})
+			//code 
+			`ResetPCH:ALout=16'b0;//复位且使输出为0
+			`PCplusIH:ALout=PCside+Iside;
+			`PCplus1H:ALout=PCside+1;
+			`RplusIH:ALout={{8'b0},Iside};//将Iside扩展至16位
+			`Rplus0H:ALout=Rside;
+			default: ALout = PCside;//AL无效时，PCside直接传到输出
+		endcase
+	end
+
+endmodule

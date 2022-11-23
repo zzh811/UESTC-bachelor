@@ -1,0 +1,51 @@
+`timescale 1 us/ 1 ps
+module RegisterFile_vlg_tst();
+// constants                                           
+// general purpose registers
+reg eachvec;
+// test vector input registers
+reg [1:0] Laddr;
+reg RFHwrite;
+reg RFLwrite;
+reg [1:0] Raddr;
+reg clk;
+reg [15:0] in;
+// wires                                               
+wire [15:0]  Lout;
+wire [15:0]  Rout;
+
+// assign statements (if any)                          
+RegisterFile i1 (
+// port map - connection between master ports and signals/registers   
+	.Laddr(Laddr),
+	.Lout(Lout),
+	.RFHwrite(RFHwrite),
+	.RFLwrite(RFLwrite),
+	.Raddr(Raddr),
+	.Rout(Rout),
+	.clk(clk),
+	.in(in)
+);
+initial                                                
+begin                                                  
+    in=16'b1000_1000_1111_1111;Laddr=0;Raddr=1;
+	 #10{RFLwrite,RFHwrite}=00;
+	 #10{RFLwrite,RFHwrite}=01;
+	 #10{RFLwrite,RFHwrite}=10;
+	 #10{RFLwrite,RFHwrite}=11;
+end  
+initial
+begin
+	clk=0;
+	#5 clk=~clk;
+	#5 clk=~clk;
+	#5 clk=~clk;
+	#5 clk=~clk;
+	#5 clk=~clk;
+	#5 clk=~clk;
+	#5 clk=~clk;
+	#5 clk=~clk;	
+	#5 clk=~clk;	 
+	#5 clk=~clk;
+end
+endmodule

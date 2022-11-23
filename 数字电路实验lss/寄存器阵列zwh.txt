@@ -1,0 +1,45 @@
+//----------------------------------------------------------------------
+//--SAYEH (Simple Architecture Yet Enough Hardware) CPU
+//----------------------------------------------------------------------
+// Register File
+
+`timescale 1 ns /1 ns
+
+module RegisterFile (
+input [15:0] in,
+input clk, RFLwrite, RFHwrite,
+input [1:0] Laddr, Raddr,
+output [15:0] Lout, Rout
+);
+
+reg [15:0] MemoryFile [0:3];
+reg [15:0] TempReg;
+
+assign Lout = MemoryFile [Laddr];
+assign Rout = MemoryFile [Raddr];
+
+
+
+	always @(negedge clk) begin
+	   // TempReg = MemoryFile [Laddr];
+		case({RFLwrite,RFHwrite})
+			2'b00:begin
+				MemoryFile[Laddr]<=0;
+				MemoryFile[Raddr]<=0;
+				end
+			2'b01:begin
+					//MemoryFile[Laddr][15:8]<=(in&11111111_0000_0000)|(1111_1111_xxxx_xxxx);
+					MemoryFile[Raddr][15:8]<=in[15:8];
+					MemoryFile[Raddr][7:0]<=8'bxxxx_xxxx;
+				end
+			2'b10:begin
+					MemoryFile[Raddr][7:0]<=in[7:0];
+					MemoryFile[Raddr][15:8]<=8'bxxxx_xxxx;
+				end
+			2'b11:begin
+					MemoryFile[Raddr]<=in;
+				end
+		//MemoryFile [Laddr] = TempReg;
+		endcase
+end
+endmodule

@@ -1,0 +1,86 @@
+`timescale 1 ns /1 ns
+
+module RegisterFile (
+input [15:0] in,
+input clk, RFLwrite, RFHwrite,
+input [1:0] Laddr, Raddr,
+output [15:0] Lout, Rout
+);
+
+reg [15:0] MemoryFile [0:3];
+reg [15:0] TempReg;
+
+assign Lout = MemoryFile [Laddr];
+assign Rout = MemoryFile [Raddr];
+
+
+
+	always @(negedge clk) begin
+	    TempReg = MemoryFile [Laddr];
+		if (RFLwrite) TempReg [7:0] = in [7:0];
+		if (RFHwrite) TempReg [15:8] = in [15:8];
+		MemoryFile [Laddr] = TempReg;
+	end
+
+endmodule
+
+
+
+
+
+
+
+`timescale 1 ps/ 1 ps
+module RegisterFile_vlg_tst();
+// constants                                           
+// general purpose registers
+reg eachvec;
+// test vector input registers
+reg [1:0] Laddr;
+reg RFHwrite;
+reg RFLwrite;
+reg [1:0] Raddr;
+reg clk;
+reg [15:0] in;
+// wires                                               
+wire [15:0]  Lout;
+wire [15:0]  Rout;
+
+// assign statements (if any)                          
+RegisterFile i1 (
+// port map - connection between master ports and signals/registers   
+	.Laddr(Laddr),
+	.Lout(Lout),
+	.RFHwrite(RFHwrite),
+	.RFLwrite(RFLwrite),
+	.Raddr(Raddr),
+	.Rout(Rout),
+	.clk(clk),
+	.in(in)
+);
+initial                                                
+begin 
+	clk=0;in=16'b1111000011110000;Raddr=2'b00;Laddr=2'b00;RFHwrite=1;RFLwrite=1;
+	#50 Raddr=2'b01;Laddr=2'b01;
+	#50 Raddr=2'b10;Laddr=2'b10;
+	#50 Raddr=2'b11;Laddr=2'b11;
+	#50 in=16'b0101010101010101;Raddr=2'b00;Laddr=2'b00;RFHwrite=1;RFLwrite=0;
+	#50 Raddr=2'b01;Laddr=2'b01;
+	#50 Raddr=2'b10;Laddr=2'b10;
+	#50 Raddr=2'b11;Laddr=2'b11; 
+	#50 in=16'b1111111100000000;Raddr=2'b00;Laddr=2'b00;RFHwrite=0;RFLwrite=1;
+	#50 Raddr=2'b01;Laddr=2'b01;
+	#50 Raddr=2'b10;Laddr=2'b10;
+	#50 Raddr=2'b11;Laddr=2'b11; 
+	#50 in=16'b0000000011111111;Raddr=2'b00;Laddr=2'b00;RFHwrite=0;RFLwrite=0;
+	#50 Raddr=2'b01;Laddr=2'b01;
+	#50 Raddr=2'b10;Laddr=2'b10;
+	#50 Raddr=2'b11;Laddr=2'b11;
+	#600 $stop;
+end   
+always
+begin
+	#25 clk=~clk;
+end
+                                                 
+endmodule

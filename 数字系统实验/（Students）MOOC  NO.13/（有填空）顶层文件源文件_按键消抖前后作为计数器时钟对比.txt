@@ -1,0 +1,58 @@
+
+module key_deboucing(
+    input clk,
+    input clr,//计数器异步清零信号
+    input col, //1列 输入
+    output [3:0] row,//4 row,输出
+    output [7:0] seg, //segment
+    output [5:0] dig   //dig
+    );
+assign row[3:0]=0001;  //固定一行row3 
+ wire clk_20ms;  //20ms clk
+ wire  btnout0;  //消抖后的按键信号
+ wire [11:0] showdat_d;  //消抖后计数器要显示的数据
+ wire [11:0] showdat_nod;  //未消抖计数器要显示的数据
+ dynamic_led6 a(  //调用6位动态显示模块实现显示
+   .clk(clk),
+   .disp_data_right0(showdat_d[3:0]),//将按键消抖后的计数器输出每4位一组，分别显示在右边3位LED
+   .disp_data_right1(showdat_d[7:4]),
+   .disp_data_right2(showdat_d[11:8]),
+   .disp_data_right3(showdat_nod[3:0]),//将未按键消抖的计数器输出每4位一组，分别显示在左边3位LED
+   .disp_data_right4(showdat_nod[7:4]),
+   .disp_data_right5(showdat_nod[11:8]),
+    .seg(seg),
+    .dig(dig)
+    );
+ divclk divclk(.clk(clk),.btnclk(clk_20ms));    //调用分频器模块
+//按键消抖后作为计数器时钟的程序  
+ reg[11:0] cnt1=0;  //12位的计数值，初始为0
+ assign showdat_d[11:0]=cnt1[11:0];//计数值送显示
+//以下填写调用按键消抖模块程序
+
+
+
+
+
+//以上填写调用按键消抖模块程序
+always@(posedge btnout0)// 用消抖的按键做时钟的计数器程序
+ if(clr==1)
+    begin 
+      cnt1<=0;
+      end
+ else
+     begin
+        cnt1<=cnt1+1;
+     end 
+//按键不消抖直接作为计数器时钟的程序 
+  reg[11:0] cnt2=0;  //12位的计数值，初始为0
+ assign showdat_nod[11:0]=cnt2[11:0];//计数值显示
+ always@(posedge col)// 用未消抖的按键做开关
+  if(clr==1)
+      begin 
+       cnt2<=0;
+       end
+   else
+      begin
+         cnt2<=cnt2+1;
+      end 
+  endmodule

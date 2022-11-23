@@ -1,0 +1,91 @@
+// Copyright (C) 1991-2013 Altera Corporation
+// Your use of Altera Corporation's design tools, logic functions 
+// and other software and tools, and its AMPP partner logic 
+// functions, and any output files from any of the foregoing 
+// (including device programming or simulation files), and any 
+// associated documentation or information are expressly subject 
+// to the terms and conditions of the Altera Program License 
+// Subscription Agreement, Altera MegaCore Function License 
+// Agreement, or other applicable license agreement, including, 
+// without limitation, that your use is for the sole purpose of 
+// programming logic devices manufactured by Altera and sold by 
+// Altera or its authorized distributors.  Please refer to the 
+// applicable agreement for further details.
+
+// *****************************************************************************
+// This file contains a Verilog test bench template that is freely editable to  
+// suit user's needs .Comments are provided in each section to help the user    
+// fill out necessary details.                                                  
+// *****************************************************************************
+// Generated on "11/21/2019 21:54:08"
+                                                                                
+// Verilog Test Bench template for design : AddressingUnit
+// 
+// Simulation tool : ModelSim-Altera (Verilog)
+// 
+
+`timescale 1 ps/ 1 ps
+module AddressingUnit_vlg_tst();
+// constants                                           
+// general purpose registers
+reg eachvec;
+// test vector input registers
+reg [7:0] Iside;
+reg PCenable;
+reg PCplus1;
+reg PCplusI;
+reg ResetPC;
+reg Rplus0;
+reg RplusI;
+reg [15:0] Rside;
+reg clk;
+// wires                                               
+wire [15:0]  Address;
+
+// assign statements (if any)                          
+AddressingUnit i1 (
+// port map - connection between master ports and signals/registers   
+	.Address(Address),
+	.Iside(Iside),
+	.PCenable(PCenable),
+	.PCplus1(PCplus1),
+	.PCplusI(PCplusI),
+	.ResetPC(ResetPC),
+	.Rplus0(Rplus0),
+	.RplusI(RplusI),
+	.Rside(Rside),
+	.clk(clk)
+);
+initial                                                
+begin                                                  
+// code that executes only once                        
+// insert code here --> begin
+clk=1;
+PCenable=0;
+Rside=16'b0000_0000_0000_0101;
+Iside=8'b0000_0101;
+PCplus1=0;PCplusI=0;ResetPC=0;Rplus0=0;RplusI=0;
+
+#10 PCenable=1;
+#20 PCplus1=1;PCplusI=0;ResetPC=0;Rplus0=0;RplusI=0;
+#20 PCplus1=0;PCplusI=1;ResetPC=0;Rplus0=0;RplusI=0;
+#20 PCplus1=0;PCplusI=0;ResetPC=1;Rplus0=0;RplusI=0;
+#20 PCplus1=0;PCplusI=0;ResetPC=0;Rplus0=1;RplusI=0;
+#20 PCplus1=0;PCplusI=0;ResetPC=0;Rplus0=0;RplusI=1;  
+
+#30 $stop;                       
+                                                       
+// --> end                                             
+                       
+end                                                    
+always                                                 
+// optional sensitivity list                           
+// @(event1 or event2 or .... eventn)                  
+begin                                                  
+// code executes for every event on sensitivity list   
+// insert code here --> begin                          
+                                                       
+#5 clk=~clk;                                              
+// --> end                                             
+end                                                    
+endmodule

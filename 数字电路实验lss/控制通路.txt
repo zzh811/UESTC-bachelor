@@ -1,0 +1,487 @@
+//----------------------------------------------------------------------
+//--SAYEH (Simple Architecture Yet Enough Hardware) CPU
+//----------------------------------------------------------------------
+//Controller
+
+`timescale 1 ns /1 ns
+
+module control (
+	ExternalReset, clk,
+    ResetPC, PCplusI, PCplus1, RplusI, Rplus0,
+    Rs_on_AddressUnitRSide, Rd_on_AddressUnitRSide, EnablePC, 
+    B15to0, AandB, AorB, notB, shlB, shrB, AaddB, AsubB, AmulB, AcmpB,sel_aluout_rfin,sel_rfin,
+    RFLwrite, RFHwrite,
+    IRload, SRload, 
+    Address_on_Databus, ALU_on_Databus, IR_on_LOpndBus, IR_on_HOpndBus, RFright_on_OpndBus,
+    ReadMem, WriteMem, ReadIO, WriteIO, Cset, Creset,
+	Instruction,
+	Cflag,Zflag ,memDataReady
+);
+
+input ExternalReset, clk;
+output
+	ResetPC, PCplusI, PCplus1, RplusI, Rplus0,
+	Rs_on_AddressUnitRSide, Rd_on_AddressUnitRSide, EnablePC, 
+    B15to0, AandB, AorB, notB, shlB, shrB, AaddB, AsubB, AmulB, AcmpB,sel_aluout_rfin,sel_rfin,
+    RFLwrite, RFHwrite,
+    IRload, SRload, 
+    Address_on_Databus, ALU_on_Databus, IR_on_LOpndBus, IR_on_HOpndBus, RFright_on_OpndBus,
+    ReadMem, WriteMem, ReadIO, WriteIO, Cset, Creset;
+reg
+	ResetPC, PCplusI, PCplus1, RplusI, Rplus0,
+	Rs_on_AddressUnitRSide, Rd_on_AddressUnitRSide, EnablePC, 
+    B15to0, AandB, AorB, notB, shlB, shrB, AaddB, AsubB, AmulB, AcmpB,sel_aluout_rfin,sel_rfin,
+    RFLwrite, RFHwrite,
+    WPreset, WPadd, IRload, SRload, 
+    Address_on_Databus, ALU_on_Databus, IR_on_LOpndBus,IR_on_HOpndBus, RFright_on_OpndBus,
+    ReadMem, WriteMem, ReadIO, WriteIO, Cset, Creset;
+    
+input[15:0] Instruction;
+input Cflag, Zflag,memDataReady;
+
+parameter [3:0]
+	reset = 0,
+	fetch = 1,
+	memread = 2,
+	exec1 = 3,
+	exec1lda = 4,
+	//exec2lda = 7,
+	exec1inp=5,
+	
+	incpc = 6;
+
+parameter b0000 = 4'b0000;
+parameter b1111 = 4'b1111;
+
+parameter nop = 4'b0000;
+parameter scf = 4'b0001;
+parameter ccf = 4'b0010;
+parameter jpr = 4'b0011;
+parameter jz  = 4'b0100;
+
+parameter mvr = 4'b0001;
+parameter lda = 4'b0010;
+parameter sta = 4'b0011;
+parameter inp = 4'b0100;
+parameter oup = 4'b0101;
+parameter anl = 4'b0110;
+parameter orr = 4'b0111;
+parameter nol = 4'b1000;
+parameter shl = 4'b1001;
+parameter shr = 4'b1010;
+parameter add = 4'b1011;
+parameter sub = 4'b1100;
+parameter mul = 4'b1101;
+parameter cmp = 4'b1110;
+
+parameter mil = 2'b00;
+parameter mih = 2'b01;
+parameter jpa = 2'b10;
+
+reg[3:0] Pstate, Nstate;
+
+
+//--------------------------------------------------------------------
+
+
+	always @ (Instruction or Pstate or ExternalReset or Cflag  or Zflag or memDataReady)
+	begin    
+		ResetPC 			   = 1'b0;
+		PCplusI 			   = 1'b0;
+		PCplus1 			   = 1'b0;
+		RplusI 				   = 1'b0;
+		Rplus0  			   = 1'b0;
+		EnablePC 			   = 1'b0;
+		B15to0 				   = 1'b0;
+		AandB 				   = 1'b0;
+		AorB 				   = 1'b0;
+		notB 				   = 1'b0;
+		shrB 				   = 1'b0;
+		shlB 				   = 1'b0;
+		AaddB  				   = 1'b0;
+		AsubB 				   = 1'b0;
+		AmulB  				   = 1'b0;
+		AcmpB  				   = 1'b0;
+		RFLwrite			   = 1'b0;
+		RFHwrite 			   = 1'b0;
+		//WPreset				   = 1'b0;
+		//WPadd				   = 1'b0;
+		IRload 				   = 1'b0;
+		SRload  			   = 1'b0;
+		sel_aluout_rfin = 1'b0;
+		sel_rfin           = 1'b0;
+		Address_on_Databus 	   = 1'b0;
+		ALU_on_Databus 		   = 1'b0;
+		IR_on_LOpndBus 		   = 1'b0;
+		IR_on_HOpndBus		   = 1'b0;
+		RFright_on_OpndBus 	   = 1'b0;
+		ReadMem 			   = 1'b0;
+		WriteMem 			   = 1'b0;
+		ReadIO 				   = 1'b0;
+		WriteIO 			   = 1'b0;
+		//Shadow				   = 1'b0;
+		Cset				   = 1'b0;
+		Creset				   = 1'b0;
+		//Zset				   = 1'b0;
+		//Zreset				   = 1'b0;
+		Rs_on_AddressUnitRSide = 1'b0;
+		Rd_on_AddressUnitRSide = 1'b0;
+
+		case (Pstate)
+		reset : // 0000
+			if(ExternalReset == 1'b1) begin
+				//WPreset = 1'b1;
+				ResetPC = 1'b1;
+				EnablePC=1'b1;
+				Creset = 1'b1;
+				//Zreset = 1'b1;
+				Nstate = reset;
+			end
+			else
+				Nstate = fetch;
+
+		fetch : // 0001
+			if(ExternalReset == 1'b1)
+				Nstate = reset;
+			else begin
+				ReadMem = 1'b1;
+				Nstate = memread;
+			end 
+
+		memread : // 0010
+			if(ExternalReset == 1'b1)
+				Nstate = reset;
+			else begin
+				if (memDataReady == 1'b0) begin
+					ReadMem = 1'b1;
+					Nstate = memread;
+				end
+				else begin   
+					IRload = 1'b1;   
+					Nstate = exec1;
+				end
+			end
+
+		exec1 : // 0011
+			if(ExternalReset == 1'b1)
+				Nstate = reset;
+			else begin
+				case (Instruction[15:12])
+				b0000 :
+					case (Instruction[11:8]) 
+					nop :
+						begin
+							PCplus1 = 1'b1;
+							EnablePC=1'b1;
+							Nstate = fetch;
+						end
+						
+					scf : begin
+						   Cset = 1'b1;						
+							PCplus1 = 1'b1;
+							EnablePC=1'b1;
+							Nstate = fetch; 
+						
+					end
+
+					ccf : begin
+						   Creset = 1'b1;			
+							PCplus1 = 1'b1;
+							EnablePC=1'b1;
+							Nstate = fetch; 
+						
+					end
+
+					jpr : begin
+						PCplusI = 1'b1;
+						EnablePC=1'b1;
+						Nstate = fetch;
+					end	
+					
+					jz : begin
+					   if(Zflag==1'b0)begin
+					   RplusI=1'b1;
+						EnablePC=1'b1;
+						Nstate = fetch;
+						end
+						else
+						begin
+						PCplus1 = 1'b1;
+						EnablePC = 1'b1;
+						Nstate = fetch;
+						end
+					end
+					
+					default: begin
+						PCplus1 = 1'b1;
+						EnablePC = 1'b1;
+						Nstate = fetch;
+					end
+					endcase
+
+				mvr : begin
+					//添加代码
+			      RFright_on_OpndBus=1'b1;
+					B15to0=1'b1;
+					ALU_on_Databus = 1'b1;
+					sel_aluout_rfin=1;
+					RFLwrite=1'b1;
+					RFHwrite=1'b1;
+					SRload=1'b1;
+					PCplus1=1'b1;
+					EnablePC=1'b1;
+					Nstate=fetch;
+			
+				end
+
+				lda : begin
+					Rplus0 = 1'b1;
+					Rs_on_AddressUnitRSide = 1'b1;
+					ReadMem = 1'b1;
+					Nstate = exec1lda;
+				end
+
+				sta : begin
+					Rplus0 = 1'b1;
+					Rd_on_AddressUnitRSide = 1'b1;
+					RFright_on_OpndBus = 1'b1;
+					B15to0 = 1'b1;
+					WriteMem = 1'b1;
+					Nstate = incpc; 
+				end
+
+				inp : begin
+					ReadIO = 1'b1;				
+					Nstate = exec1inp; 
+				end
+
+				oup : begin
+					//Rplus0 = 1'b1;
+					//Rd_on_AddressUnitRSide = 1'b1;
+					RFright_on_OpndBus = 1'b1;
+					B15to0 = 1'b1;
+					WriteIO = 1'b1;
+					PCplus1 = 1'b1;
+			      EnablePC = 1'b1;
+			      Nstate = fetch;				 
+				end
+
+				anl : begin
+					RFright_on_OpndBus = 1'b1;
+					AandB = 1'b1;
+					ALU_on_Databus = 1'b1;
+					sel_aluout_rfin=1'b1;
+					RFLwrite = 1'b1;
+					RFHwrite = 1'b1;
+					SRload = 1'b1;					
+					PCplus1 = 1'b1;
+					EnablePC=1'b1;
+					Nstate = fetch; 				
+				end
+
+				orr : begin
+					RFright_on_OpndBus = 1'b1;
+					AorB = 1'b1;
+					ALU_on_Databus = 1'b1;
+					sel_aluout_rfin=1'b1;
+					RFLwrite = 1'b1;
+					RFHwrite = 1'b1;
+					SRload = 1'b1;					
+					PCplus1 = 1'b1;
+					EnablePC=1'b1;
+					Nstate = fetch; 					
+				end
+
+				nol : begin
+					RFright_on_OpndBus = 1'b1;
+					notB = 1'b1;
+					ALU_on_Databus = 1'b1;
+					sel_aluout_rfin=1'b1;
+					RFLwrite = 1'b1;
+					RFHwrite = 1'b1;
+					SRload = 1'b1;
+					PCplus1 = 1'b1;
+					EnablePC=1'b1;
+					Nstate = fetch; 					
+				end
+
+				shl : begin
+					RFright_on_OpndBus = 1'b1;
+					shlB = 1'b1;
+					ALU_on_Databus = 1'b1;
+					sel_aluout_rfin=1'b1;
+					RFLwrite = 1'b1;
+					RFHwrite = 1'b1;
+					SRload = 1'b1;
+					
+					PCplus1 = 1'b1;
+					EnablePC=1'b1;
+					Nstate = fetch; 
+				end
+
+				shr : begin
+					RFright_on_OpndBus = 1'b1;
+					shrB = 1'b1;
+					ALU_on_Databus = 1'b1;
+					sel_aluout_rfin=1'b1;
+					RFLwrite = 1'b1;
+					RFHwrite = 1'b1;
+					SRload = 1'b1;
+					
+					PCplus1 = 1'b1;
+					EnablePC=1'b1;
+					Nstate = fetch; 					
+				end
+
+				add : begin
+					RFright_on_OpndBus = 1'b1;
+					AaddB = 1'b1;
+					ALU_on_Databus = 1'b1;
+					sel_aluout_rfin=1'b1;
+					RFLwrite = 1'b1;
+					RFHwrite = 1'b1;
+					SRload = 1'b1;
+					
+					PCplus1 = 1'b1;
+					EnablePC=1'b1;
+					Nstate = fetch; 					
+				end
+
+				sub : begin
+					RFright_on_OpndBus = 1'b1;
+					AsubB = 1'b1;
+					ALU_on_Databus = 1'b1;
+					sel_aluout_rfin=1'b1;
+					RFLwrite = 1'b1;
+					RFHwrite = 1'b1;
+					SRload = 1'b1;					
+					PCplus1 = 1'b1;
+					EnablePC=1'b1;
+					Nstate = fetch; 
+				end
+
+				mul : begin
+					RFright_on_OpndBus = 1'b1;
+					AmulB = 1'b1;
+					ALU_on_Databus = 1'b1;
+					sel_aluout_rfin=1'b1;
+					RFLwrite = 1'b1;
+					RFHwrite = 1'b1;
+					SRload = 1'b1;
+					
+					PCplus1 = 1'b1;
+					EnablePC=1'b1;
+					Nstate = fetch; 
+				end
+
+				cmp : begin
+					RFright_on_OpndBus = 1'b1;
+					AcmpB = 1'b1;
+					SRload = 1'b1;
+					
+					PCplus1 = 1'b1;
+					EnablePC=1'b1;
+					Nstate = fetch; 
+				end
+
+				b1111 :
+					case (Instruction[9: 8]) 
+					mil : begin
+						//添加代码
+						IR_on_LOpndBus=1'b1;
+					B15to0=1'b1;
+					ALU_on_Databus = 1'b1;
+					sel_aluout_rfin=1;
+					RFLwrite=1'b1;
+					SRload=1'b1;
+					PCplus1=1'b1;
+					EnablePC=1'b1;
+					Nstate=fetch;
+					end
+
+					mih : begin
+						//添加代码
+						IR_on_HOpndBus=1'b1;
+						B15to0=1'b1;
+						ALU_on_Databus = 1'b1;
+						sel_aluout_rfin=1;
+						RFHwrite=1'b1;
+						SRload=1'b1;
+						PCplus1=1'b1;
+						EnablePC=1'b1; 
+						Nstate=fetch;
+					end
+
+					jpa : begin
+						Rd_on_AddressUnitRSide = 1'b1;
+						RplusI = 1'b1;
+						EnablePC=1'b1;
+						Nstate = fetch; 
+					end
+
+					default:begin
+					      RplusI = 1'b1;
+						EnablePC=1'b1;
+						Nstate = fetch;
+					end
+					endcase
+
+				default :
+					Nstate = fetch;
+				endcase
+			end 
+
+		exec1lda : 
+			if(ExternalReset == 1'b1)
+				Nstate = reset;
+			else begin
+				if (memDataReady == 1'b0) begin
+					Rplus0 = 1'b1;
+					Rs_on_AddressUnitRSide = 1'b1;
+					ReadMem = 1'b1;
+					Nstate = exec1lda;
+				end
+				else begin  
+					RFLwrite = 1'b1;
+					RFHwrite = 1'b1;	
+	            sel_aluout_rfin = 1'b0;	
+					
+					PCplus1 = 1'b1;
+					EnablePC=1'b1;					
+					Nstate = fetch;
+					
+				end
+			end
+			
+		
+      exec1inp :
+	      if(ExternalReset == 1'b1)
+				Nstate = reset;
+			else begin
+			    RFLwrite = 1'b1;
+				 RFHwrite = 1'b1;	
+	          sel_aluout_rfin = 1'b0;	
+				 sel_rfin =1'b1;
+			    PCplus1 = 1'b1;
+				 EnablePC=1'b1;					
+				 Nstate = fetch;					
+				end
+			
+
+		incpc : begin
+			PCplus1 = 1'b1;
+			EnablePC = 1'b1;
+			Nstate = fetch;
+		end
+		
+		default:  Nstate = reset;
+
+		endcase
+	end
+
+	always @ (negedge clk)
+		Pstate = Nstate;
+
+endmodule
+
+
